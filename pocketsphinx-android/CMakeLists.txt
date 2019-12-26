@@ -2,8 +2,11 @@
 
 cmake_minimum_required(VERSION 3.4.1)
 
-set(SPHINXBASE_SRC $ENV{SPHINXBASE_HOME}/src/libsphinxbase)
-set(POCKETSPHINX_SRC $ENV{POCKETSPHINX_HOME}/src/libpocketsphinx)
+set(SPHINXBASE_HOME ${CMAKE_SOURCE_DIR}/../sphinxbase)
+set(POCKETSPHINX_HOME ${CMAKE_SOURCE_DIR}/../pocketsphinx)
+
+set(SPHINXBASE_SRC ${SPHINXBASE_HOME}/src/libsphinxbase)
+set(POCKETSPHINX_SRC ${POCKETSPHINX_HOME}/src/libpocketsphinx)
 
 set(SPHINXBASE_SOURCES
 fe/fe_interface.c

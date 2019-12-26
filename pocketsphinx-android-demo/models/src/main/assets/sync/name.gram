@@ -1,0 +1,5 @@
+#JSGF V1.0 UTF-8 cn;
+
+grammar name;
+
+public <item> = 小花 | 吴云国 | 朱忠武 | 苏文渊 ;
