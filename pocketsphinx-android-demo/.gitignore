@@ -5,6 +5,7 @@
 /app/build
 /models/build
 /wear/build
+/aars/build/
 .DS_Store
 *.md5
 *.lst
