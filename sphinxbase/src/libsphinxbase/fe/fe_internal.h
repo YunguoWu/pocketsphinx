@@ -164,7 +164,7 @@ struct fe_s {
     /* Temporary buffers for processing. */
     /* FIXME: too many of these. */
     int16 *spch;
-    frame_t *frame;
+    frame_t *frame;  ////410(hamming windowsize) + 102(padding 0)
     powspec_t *spec, *mfspec;
     int16 *overflow_samps;
 };
