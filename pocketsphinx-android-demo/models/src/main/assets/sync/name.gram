@@ -2,4 +2,5 @@
 
 grammar name;
 
-public <item> = 小花 | 吴云国 | 朱忠武 | 苏文渊 ;
+public <item> = 小花 | 吴云国 | 朱忠武 | 苏文渊  | 
+                我找 | 杜东川 | 李植 | 毛洪飞 | 吴世振;
