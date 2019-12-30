@@ -78,6 +78,9 @@ public class SpeechRecognizer {
     protected SpeechRecognizer(Config config) throws IOException {
         decoder = new Decoder(config);
         sampleRate = (int)decoder.getConfig().getFloat("-samprate");
+
+        Log.w(TAG, "SpeechRecognizer: sampleRate" + sampleRate);
+
         bufferSize = Math.round(sampleRate * BUFFER_SIZE_SECONDS);
         recorder = new AudioRecord(
                 AudioSource.VOICE_RECOGNITION, sampleRate,

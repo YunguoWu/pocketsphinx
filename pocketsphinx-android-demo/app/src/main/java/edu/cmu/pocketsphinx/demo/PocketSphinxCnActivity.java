@@ -38,6 +38,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -57,19 +58,21 @@ import android.util.Log;  //for log.d
 import static java.lang.String.format;  //for printf format
 
 public class PocketSphinxCnActivity extends Activity implements
-        RecognitionListener {
+        RecognitionListener, View.OnClickListener {
 
     protected static final String TAG = "pocketsphinx.demo";
+    protected static final int BESTSCORE_THRES = -2000;
 
     /* Named searches allow to quickly reconfigure the decoder */
     private static final String KWS_SEARCH = "唤醒";
-    private static final String FORECAST_SEARCH = "forecast";
+    private static final String CHINESE_SEARCH = "汉语";
     private static final String DIGITS_SEARCH = "数字";
     private static final String PHONE_SEARCH = "phones";
     private static final String NAME_SEARCH = "名字";
 
     /* Keyword we are looking for to activate menu */
     private static final String KEYPHRASE = "小花";
+    private static String searchName;
 
     /* Used to handle permission request */
     private static final int PERMISSIONS_REQUEST_RECORD_AUDIO = 1;
@@ -84,13 +87,19 @@ public class PocketSphinxCnActivity extends Activity implements
         // Prepare the data for UI
         captions = new HashMap<>();
         captions.put(KWS_SEARCH, R.string.kws_caption);
-        captions.put(NAME_SEARCH, R.string.menu_caption);
+        captions.put(NAME_SEARCH, R.string.name_caption);
         captions.put(DIGITS_SEARCH, R.string.digits_caption);
         //captions.put(PHONE_SEARCH, R.string.phone_caption);
-        //captions.put(FORECAST_SEARCH, R.string.forecast_caption);
+        captions.put(CHINESE_SEARCH, R.string.chines_caption);
         setContentView(R.layout.main);
         ((TextView) findViewById(R.id.caption_text))
                 .setText("Preparing the recognizer");
+
+        searchName = KWS_SEARCH;
+
+        //init view
+        findViewById(R.id.free_recog_bt).setOnClickListener(this);
+        findViewById(R.id.name_recog_bt).setOnClickListener(this);
 
         // Check if user has given permission to record audio
         int permissionCheck = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.RECORD_AUDIO);
@@ -122,7 +131,7 @@ public class PocketSphinxCnActivity extends Activity implements
         }
         @Override
         protected void onPostExecute(Exception result) {
-            Log.d(TAG, format("onPostExecute"));
+            Log.d(TAG, format("====onPostExecute"));
             if (result != null) {
                 ((TextView) activityReference.get().findViewById(R.id.caption_text))
                         .setText("Failed to init recognizer " + result);
@@ -158,6 +167,22 @@ public class PocketSphinxCnActivity extends Activity implements
         }
     }
 
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.free_recog_bt:
+                Log.d(TAG,"CHINESE_SEARCH======");
+                //switchSearch(CHINESE_SEARCH);
+                searchName = CHINESE_SEARCH;
+                break;
+            case R.id.name_recog_bt:
+                Log.d(TAG,"NAME_SEARCH======");
+                //switchSearch(NAME_SEARCH);
+                searchName = NAME_SEARCH;
+                break;
+        }
+    }
+
     /**
      * In partial result we get quick updates about current hypothesis. In
      * keyword spotting mode we can react here, in other modes we need to wait
@@ -170,14 +195,26 @@ public class PocketSphinxCnActivity extends Activity implements
 
         String text = hypothesis.getHypstr();
 
-        Log.d(TAG, "onPartialResult: " + text);
+        Log.d(TAG, "==onPartialResult: " + text + "; getBestScore: " + hypothesis.getBestScore()
+                + "; getProb: " + hypothesis.getProb());
+        if (hypothesis.getBestScore() > BESTSCORE_THRES)
+            ((TextView) findViewById(R.id.partial_text)).setText("Partial: " + text + "; getBestScore: " + hypothesis.getBestScore()
+                                + "; getProb: " + hypothesis.getProb());
+        else
+            ((TextView) findViewById(R.id.partial_text)).setText("Partial: ");
 
+        //if (!recognizer.getSearchName().equals(searchName))
+            switchSearch(searchName);
+
+        /*
         if (text.equals(KEYPHRASE))
             switchSearch(NAME_SEARCH);
         else if (text.equals(DIGITS_SEARCH))
             switchSearch(DIGITS_SEARCH);
         else
             ((TextView) findViewById(R.id.result_text)).setText(text);
+
+         */
     }
 
     /**
@@ -185,15 +222,27 @@ public class PocketSphinxCnActivity extends Activity implements
      */
     @Override
     public void onResult(Hypothesis hypothesis) {
-        ((TextView) findViewById(R.id.result_text)).setText("");
+        Log.d(TAG, "==onResult: ");
+
         if (hypothesis != null) {
             String text = hypothesis.getHypstr();
+
+            if (hypothesis.getBestScore() > BESTSCORE_THRES)
+                ((TextView) findViewById(R.id.result_text)).setText("Result: " + text + "; getBestScore: " + hypothesis.getBestScore()
+                        + "; getProb: " + hypothesis.getProb());
+            else
+                ((TextView) findViewById(R.id.result_text)).setText("Result: ");
+
             makeText(getApplicationContext(), text, Toast.LENGTH_SHORT).show();
+        }
+        else {
+            ((TextView) findViewById(R.id.result_text)).setText("Result: ");
         }
     }
 
     @Override
     public void onBeginningOfSpeech() {
+        Log.d(TAG, "==onBeginningOfSpeech");
     }
 
     /**
@@ -201,8 +250,11 @@ public class PocketSphinxCnActivity extends Activity implements
      */
     @Override
     public void onEndOfSpeech() {
-        if (!recognizer.getSearchName().equals(KWS_SEARCH))
-            switchSearch(KWS_SEARCH);
+        //if (!recognizer.getSearchName().equals(KWS_SEARCH))
+        //    switchSearch(KWS_SEARCH);
+
+        Log.d(TAG, "==onEndOfSpeech");
+        switchSearch(searchName);
     }
 
     private void switchSearch(String searchName) {
@@ -212,7 +264,7 @@ public class PocketSphinxCnActivity extends Activity implements
         if (searchName.equals(KWS_SEARCH))
             recognizer.startListening(searchName);
         else
-            recognizer.startListening(searchName, 20000);
+            recognizer.startListening(searchName, 10000);
 
         String caption = getResources().getString(captions.get(searchName));
         ((TextView) findViewById(R.id.caption_text)).setText(caption);
@@ -246,24 +298,26 @@ public class PocketSphinxCnActivity extends Activity implements
         File digitsGrammar = new File(assetsDir, "digits.gram");
         recognizer.addGrammarSearch(DIGITS_SEARCH, digitsGrammar);
 
- /*
         // Create language model search
-        File languageModel = new File(assetsDir, "weather.dmp");
-        recognizer.addNgramSearch(FORECAST_SEARCH, languageModel);
+        File languageModel = new File(assetsDir, "zh_cn.lm.bin");
+        recognizer.addNgramSearch(CHINESE_SEARCH, languageModel);
 
+        /*
         // Phonetic search
         File phoneticModel = new File(assetsDir, "en-phone.dmp");
         recognizer.addAllphoneSearch(PHONE_SEARCH, phoneticModel);
-  */
+         */
     }
 
     @Override
     public void onError(Exception error) {
+        Log.d(TAG, "==onError");
         ((TextView) findViewById(R.id.caption_text)).setText(error.getMessage());
     }
 
     @Override
     public void onTimeout() {
-        switchSearch(KWS_SEARCH);
+        Log.d(TAG, "==onTimeout");
+        switchSearch(searchName);
     }
 }
